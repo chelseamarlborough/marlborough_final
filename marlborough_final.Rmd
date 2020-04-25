@@ -5,6 +5,25 @@ date: "4/25/2020"
 output: html_document
 ---
 
+### Abstract
+
+Stokes (2015) finds that voters do pay attention to climate policy and afterwards penalize the incumbent governments for facilities viewed as harmful to the communities. I successfullly replicated Stokes' results. In my replication, I tested the strength of Stokes' model using a Bayesian regression model. I found that -
+
+### Introduction
+
+The first piece of this paper was a replication of Stokes' results. Here code and data are publically available on the Harvard Dataverse. In order to replicate her results, I ran her orignial code using R code. I was easily able to run the code for both the tables and figures, but the code for formatting the tables in LaTex was not provided on Dataverse. Instead, I opted to analyze the raw output of the regressions from my replications. All code for the replication is available in my GitHub repository.
+
+After the replication, in my extension of Stoke's work I test the strength of Stokes' model by running a Bayesian regression upon it. In order to perform this treatment effect, I created a new variable named "effect" that is deprived from "perc_lib". According to Stokes' codebook, "perc_lib" represents the votes cast for the Liberal Party divided by the number of voters who cast ballots in the precinct. In other words, "perc_lib" is equivalent to vote share. If the vote share is greater than 0, it is equal to 1 in "effect". If the vote share is less than 0, it is equal to 0 in "effect". I then replaced Stokes' linear regressions with Bayesian ones and replaced "perc_lib" with "effect". 
+
+Stokes' results in her figures and tables revealed that -
+
+### Literature Review
+
+
+
+
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -25,11 +44,7 @@ library(scales)
 library(RColorBrewer)
 library(rstanarm)
 library(bookdown)
-
-# I APOLOGIZE. I HAVE SWITCHED PAPERS MULTIPLE TIMES IN THE LAST MONTH/WEEK SO I
-# CONSTANTLY LEARNING NEW MATERIAL AND TRYING TO CATCH UP. THIS IS LITERALLY
-# JUST SOME FIGURES AND MY EXTENSION. I AM GOING TO WORK ON AESTHETICS LATER.
-# THANK YOU FOR YOUR UNDERSTANDING.
+library(dplyr)
 
 ```
 
@@ -37,7 +52,7 @@ library(bookdown)
 
 divisions <-
   read.csv(
-    "data.csv",
+    "replication_file.csv",
     stringsAsFactors = FALSE,
     na.strings = c("NA", ""),
     strip.white = TRUE
@@ -986,20 +1001,6 @@ round(coeftest(
 
 ```
 
-```{r table 1a made, results="asis"}
-
-library(stargazer)
-
-stargazer(mod_1, mod_3, mod_5, mod_7, mod_9, mod_11, type = "latex", add.lines = list(c("Fixed effects?", "Y", "Y”, Y", "Y", "Y", "Y")), title = "Effects of Wind Turbines on Incumbent Party Vote Share in Precincts")
-
-```
-
-```{r table 1b made, results="asis"}
-
-stargazer(mod_2, mod_4, mod_6, mod_8, mod_10, mod_12, type = "latex", add.lines = list(c("Fixed effects?", "Y", "Y”, Y", "Y", "Y", "Y")), title = "Effects of Wind Turbines on Incumbent Party Vote Share in Precincts")
-
-```
-
 
 ```{r table 2, include=FALSE}
 
@@ -1210,3 +1211,321 @@ round(coeftest(mod_4, vcov = vcovCluster_demean(
   )), 3) 
   
 ```
+
+### Extension
+
+```{r table 1 replication, include= FALSE}
+
+set.seed(14)
+
+yx_data <- divisions[, c("perc_lib", "prop")] %>% 
+  mutate(effect = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(effect = as.numeric(effect))
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+#yx_diffed <- yx_diffed %>% 
+#  mutate(effect = ifelse(perc_lib >= 0, "1", "0"))
+
+#mod_1 <-stan_glm(effect ~ prop + Y2003 + Y2007, data = yx_diffed, refresh = 0, family = "binary")
+
+# Column 1 (All Precincts), Section 2 (Turbine Operational)
+# Using panel demeaning function
+
+yx_data <- divisions[, c("perc_lib", "op")]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_2 <- stan_glm(test ~ op + Y2003 + Y2007, data = yx_diffed)
+
+# Column 2 (All Precincts with Controls), Section 1 (Turbine Proposal)
+
+divisions <- droplevels(divisions)
+
+yx_data <-
+  divisions[, c(
+    "perc_lib",
+    "prop",
+    "p_uni_degree",
+    "log_pop_denc",
+    "unemploy_rate",
+    "log_median_inc",
+    "p_immigrant"
+  )]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  ) # group needs to be a factor as well
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_3 <-
+  stan_glm(
+    test ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed
+  )
+
+# Column 2 (All Precincts with Controls), Section 2 (Turbine Operational)
+
+divisions <- droplevels(divisions)
+
+yx_data <-
+  divisions[, c(
+    "perc_lib",
+    "op",
+    "p_uni_degree",
+    "log_pop_denc",
+    "unemploy_rate",
+    "log_median_inc",
+    "p_immigrant"
+  )]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  ) # group needs to be a factor as well
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_4 <-
+  stan_glm(
+    test ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed
+  )
+
+# Column 3 (Rural Precincts), Section 1 (Turbine Proposal)
+
+div_rural <-
+  droplevels(div_rural) #Note: you need to have created the rural subset in Data Construction section above.
+
+yx_data <- div_rural[, c("perc_lib", "prop")]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(div_rural$year),
+    group = div_rural$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_5 <- stan_glm(test ~ prop + Y2003 + Y2007, data = yx_diffed)
+
+# Column 3 (Rural Precincts), Section 2 (Turbine Operational)
+
+div_rural <- droplevels(div_rural)
+
+yx_data <- div_rural[, c("perc_lib", "op")]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(div_rural$year),
+    group = div_rural$master_id
+  ) # change dataset
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_6 <-
+  stan_glm(test ~ op + Y2003 + Y2007, data = yx_diffed) #change treatment variable
+
+# Column 4 (Rural Precincts with Controls), Section 1 (Turbine Proposal)
+
+div_rural <- droplevels(div_rural)
+
+yx_data <-
+  div_rural[, c(
+    "perc_lib",
+    "prop",
+    "p_uni_degree",
+    "log_pop_denc",
+    "unemploy_rate",
+    "log_median_inc",
+    "p_immigrant"
+  )]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(div_rural$year),
+    group = div_rural$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_7 <-
+  stan_glm(
+    test ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed
+  )
+
+# Column 4 (Rural Precincts with Controls), Section 2 (Turbine Operational)
+
+div_rural <- droplevels(div_rural)
+
+yx_data <-
+  div_rural[, c(
+    "perc_lib",
+    "op",
+    "p_uni_degree",
+    "log_pop_denc",
+    "unemploy_rate",
+    "log_median_inc",
+    "p_immigrant"
+  )]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(div_rural$year),
+    group = div_rural$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_8 <-
+  stan_glm(
+    test ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed
+  )
+
+# Column 5 (Balanced Precincts), Section 1 (Turbine Proposal)
+
+yx_data <- divisions[, c("perc_lib", "prop")]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_9 <-
+  stan_glm(test ~ prop + Y2003 + Y2007,
+     data = yx_diffed,
+     weights = divisions$weights_p) # add in weights
+
+# Column 5 (Balanced Precincts), Section 2 (Turbine Operational)
+
+yx_data <- divisions[, c("perc_lib", "op")]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_10 <-
+  stan_glm(test ~ op + Y2003 + Y2007,
+     data = yx_diffed,
+     weights = divisions$weights_o) # add in weights
+
+# Column 6 (Balanced Precincts), Section 1 (Turbine Proposal)
+
+yx_data <-
+  divisions[, c(
+    "perc_lib",
+    "prop",
+    "p_uni_degree",
+    "log_pop_denc",
+    "unemploy_rate",
+    "log_median_inc",
+    "p_immigrant"
+  )]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_11 <-
+  stan_glm(
+    test ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed,
+    weights = divisions$weights_p
+  ) # add in weights
+
+# Column 6 (Balanced Precincts), Section 2 (Turbine Operational)
+
+yx_data <-
+  divisions[, c(
+    "perc_lib",
+    "op",
+    "p_uni_degree",
+    "log_pop_denc",
+    "unemploy_rate",
+    "log_median_inc",
+    "p_immigrant"
+  )]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+yx_diffed <- yx_diffed %>% 
+  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(test = as.numeric(test))
+
+mod_12 <-
+  stan_glm(
+    test ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed,
+    weights = divisions$weights_o
+  ) # add in weights
+
+```
+
+### Appendix
+
+![ ](table_1.png)
+
+![ ](table_2.png)
