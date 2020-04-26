@@ -25,7 +25,7 @@ Throughout this paper, I will investigate Stokes' paper through literature revie
 
 This paper is written in response to growing of evidence surrounding retrospective voter behavior in regard to policy implementation, specifically surrounding climate policy. Recent evidence has suggested that voters will vote against incumbents whose policy does not align with public opinion. In 2011, Michael M. Bechtel and Jens Hainmueller found that in favorable circumstances, voters can have long-term gratitude in response to policy decisions that align with common interest (Bechtel & Hainmueller 2011). 
 
-Resistance to climate policy is often found on the local level regarding projects that have benefits for a large sum of people, and similar trends can been seen in government projects such as hospitals, subways, housing, etc (ALdrich 2008). In regard to economic performance, D. Roderick Kiewiet found that if there is less transparency as to who's to blame for policy results, incumbent parties are not as effected as there is less voter mobilization (Kiewiet 2000). In regard to climate policy, Noel Cass and Gordon Walker found that opposition to the planning and implementation of wind farms motives voters to vote against these kinds of policies as a stance againt government intrusion (Cass & Walker 2009). 
+Resistance to climate policy is often found on the local level regarding projects that have benefits for a large sum of people, and similar trends can been seen in government projects such as hospitals, subways, housing, etc (ALdrich 2010). In regard to economic performance, D. Roderick Kiewiet found that if there is less transparency as to who's to blame for policy results, incumbent parties are not as effected as there is less voter mobilization (Kiewiet 2000). In regard to climate policy, Noel Cass and Gordon Walker found that opposition to the planning and implementation of wind farms motives voters to vote against these kinds of policies as a stance againt government intrusion (Cass & Walker 2009). 
 
 While much of the reserach surrounding retrospetive voting is centered around economic policy, Stokes' paper investigates the direct correlation between wind turbine proximity and later incumbent support, concluding with similar studies found in Cass & Walker (2009). This paper also utlized other findings regarding public opinion on climate policy to support Stokes' conclusions.
 
@@ -2609,4 +2609,4 @@ ggplot(plot_op_omit, aes(y = ATT, x = dist)) +
 
 # References
 
-[@article]
+[@stokes2016electoral, @cass2009emotion, @kiewiet2000economic, @aldrich2010site, @bechtel2011lasting]
