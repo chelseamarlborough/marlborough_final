@@ -7,22 +7,31 @@ output: html_document
 
 ### Abstract
 
-Stokes (2015) finds that voters do pay attention to climate policy and afterwards penalize the incumbent governments for facilities viewed as harmful to the communities. I successfullly replicated Stokes' results. In my replication, I tested the strength of Stokes' model using a Bayesian regression model. I found that -
+Stokes (2015) finds that voters do pay attention to climate policy and afterwards penalize the incumbent governments for facilities viewed as harmful to the communities. I successfullly replicated Stokes' results. In my replication, I tested the strength of Stokes' model using a Bayesian regression model. Contrary to Stokes' findings, I found that on average, voters were more likely to support the incumbent governments.
 
 ### Introduction
 
+Stokes (2015) uses data that from 26 districts in Ontario, Canada where renewable wind projects were proposed or operational to determine whether people living near wind turbines vote against incumbent governments to punish them for climate policy regarding incentives for infrastructure in their local communities (Stokes 2015). During Onatrio's 2003 election, the Liberal Party bid with a plan to exhaust coal usage. After winning the election and having eight years of power, the Liberals implemented a "feed-in-tariff" policy which aimed to remove coal usage, reduce greenhouse emissions, and boost job opportunities within the provinces (Stokes 2015). They focused the policy around the use of wind energy development and provided substantial returns on investment and many company began to opt-in to develop wind projects in areas with high wind resources, all of which excluded the communities' input on whether they desired to receive the structures (Stokes 2015). The data collected is from the 2003, 2007, and 2011 elections, marking the Liberal Party's beginning of power to them losing majority (Stokes 2015). To ensure the robustness of her model, Stokes utilized a fixed effect estimator, which relies on variation of a unit to indentify causal effects, and a instrumental variable estimator, which relies on cross-sectional comparison to check the fixed effects results (Stokes 2015). The fixed effect estimator was proximity to proposed or operation wind turbine structures and the instrumental variable estimator was wind power. The results of linear regression ran by Stokes show that voters retrospectively punished incumbent governments for facilites viewed as harmful to the communities and that proximity to wind turbines leads them to oppose the development of projects (Stokes 2015). In addition, Stokes that communities were mobilized to vote against proposals, which accounts for the change in the Liberal Party's vote share, and that the voters were informed about climate change due to only punishing incumbent governments to which were responsible for new policies (Stokes 2015).  
+
 The first piece of this paper was a replication of Stokes' results. Here code and data are publically available on the Harvard Dataverse. In order to replicate her results, I ran her orignial code using R code. I was easily able to run the code for both the tables and figures, but the code for formatting the tables in LaTex was not provided on Dataverse. I also was unable to create Figure 1, as code was also not provided. Instead, I opted to analyze the raw output of the regressions from my replications. All code for the replication is available in my GitHub repository.
 
-After the replication, in my extension of Stoke's work I test the strength of Stokes' model by running a Bayesian regression upon it. In order to perform this treatment effect, I created a new variable named "effect" that is deprived from "perc_lib". According to Stokes' codebook, "perc_lib" represents the votes cast for the Liberal Party divided by the number of voters who cast ballots in the precinct. In other words, "perc_lib" is equivalent to vote share. If the vote share is greater than 0, it is equal to 1 in "effect". If the vote share is less than 0, it is equal to 0 in "effect". I then replaced Stokes' linear regressions with Bayesian ones and replaced "perc_lib" with "effect". 
+After the replication, in my extension of Stoke's work I test the strength of Stokes' model by running a Bayesian regression upon it. In order to perform this treatment effect, I created a new variable named "effect" that is deprived from "perc_lib". According to Stokes' codebook, "perc_lib" represents the votes cast for the Liberal Party divided by the number of voters who cast ballots in the precinct. In other words, "perc_lib" is equivalent to vote share. If the vote share is greater than 0, it is equal to 1 in "vote". If the vote share is less than 0, it is equal to 0 in "vote". I then replaced Stokes' linear regressions with Bayesian ones and replaced "perc_lib" with "vote". This design is used to predict the probability of voting for the incumbent. 
 
-Stokes' results in her figures and tables revealed that -
+The results of figures and tables using stan_glm() outputs revealed that Stokes' models may not have been as robust as she had anticipated. I discovered that voters were more likely to support incumbent governments retrospectively from wind turbine implementation. These results clash with Stokes' findings. This may be due to clustering not being utilized in my models. This extension therefore creates more questions surrounding climate policy implementation and incumbent voter support.
+
+Throughout this paper, I will investigate Stokes' paper through literature review, discussion of the replication, and an in-depth analysis of my extension. 
 
 ### Literature Review
 
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+knitr::opts_chunk$set(echo = FALSE)
+
+# I set this equal to false because I don't want it to appear on my pdf.
 
 library(foreign)
 library(lmtest)
@@ -43,9 +52,16 @@ library(rstanarm)
 library(bookdown)
 library(dplyr)
 
+# These are the libraries needed for the replications of Stokes' data and for my
+# extension.
+
 ```
 
+### Extension
+
 ```{r reading in data, include = FALSE}
+
+# I set include = FALSE because I don't want this to appear on my pdf.
 
 divisions <-
   read.csv(
@@ -55,8 +71,9 @@ divisions <-
     strip.white = TRUE
   )
 
-divisions$poll_id_07 <-
-  as.factor(divisions$poll_id_07) #several variables need to be factors to ensure the functions run properly
+# This is code from the replication on feeding in the dataset. 
+
+divisions$poll_id_07 <- as.factor(divisions$poll_id_07) 
 
 divisions$master_id <- as.factor(divisions$master_id)
 
@@ -64,9 +81,17 @@ divisions$poll_id_03 <- as.factor(divisions$poll_id_03)
 
 divisions$fed_id <- as.factor(divisions$fed_id)
 
+# This is code from the replication. Several variables need to be factors to
+# ensure the functions that Stokes created run properly.
+
 ```
 
 ```{r demeaner function, include=FALSE}
+
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+# This is code for one of many of Stokes' functions from the replication code
+# and her code comments. This function is necessary for my extension.
 
 demeaner <- function(yx, T, group, w = NULL) {
   conds <- length(levels(T))
@@ -74,12 +99,18 @@ demeaner <- function(yx, T, group, w = NULL) {
   Td = as.data.frame(model.matrix( ~ T - 1, model.frame( ~ T - 1), contrasts =
                                      FALSE)[1:n, 1:conds])
   colnames(Td) <-
-    paste("Y", levels(T)[1:conds], sep = "") #puts a Y in front of the year/time variable so they are character strings
+    paste("Y", levels(T)[1:conds], sep = "") 
+  
+# This puts a Y in front of the year/time variable so they are character
+# strings.
   
   yx <- cbind(yx, Td)
   
   yx2 <-
-    matrix(NA, nrow = nrow(yx), ncol = ncol(yx)) # this is a big empty matrix we will fill
+    matrix(NA, nrow = nrow(yx), ncol = ncol(yx)) 
+  
+# This is a big empty matrix we will fill.
+  
   group <- droplevels(group)
   
   for (c in levels(group)) {
@@ -105,122 +136,13 @@ demeaner <- function(yx, T, group, w = NULL) {
 
 ```
 
-```{r vcov cluster function with demean, include=FALSE}
-
-vcovCluster_demean <- function(model, cluster, first)
-{
-  require(sandwich)
-  require(lmtest)
-  cluster <- droplevels(cluster)
-  if (nrow(model.matrix(model)) != length(cluster)) {
-    stop("check your data: cluster variable has different N than model")
-  }
-  M <- length(unique(cluster))
-  N <- length(cluster)
-  K <- model$rank
-  if (M < 50) {
-    warning(
-      "Fewer than 50 clusters, variances may be unreliable (could try block bootstrap instead)."
-    )
-  }
-  dfc <-
-    (M / (M - 1)) * ((N - 1) / (N - K - first)) #NOTE: need to change this 6186 if the clusters is different
-  uj  <-
-    apply(estfun(model), 2, function(x)
-      tapply(x, cluster, sum))
-  
-  rcse.cov <- dfc * sandwich(model, meat = crossprod(uj) / N)
-  return(rcse.cov)
-}
-
-```
-
-```{r vcov cluster function, include=FALSE}
-
-vcovCluster <- function(model, cluster)
-{
-  require(sandwich)
-  require(lmtest)
-  if (nrow(model.matrix(model)) != length(cluster)) {
-    stop("check your data: cluster variable has different N than model")
-  }
-  M <- length(unique(cluster))
-  N <- length(cluster)
-  K <- model$rank
-  if (M < 50) {
-    warning(
-      "Fewer than 50 clusters, variances may be unreliable (could try block bootstrap instead)."
-    )
-  }
-  dfc <- (M / (M - 1)) * ((N - 1) / (N - K))
-  uj  <-
-    apply(estfun(model), 2, function(x)
-      tapply(x, cluster, sum))
-  
-  rcse.cov <- dfc * sandwich(model, meat = crossprod(uj) / N)
-  return(rcse.cov)
-}
-
-```
-
-```{r summarize function, include=FALSE}
-
-summarySE <-
-  function(data = NULL,
-           measurevar,
-           groupvars = NULL,
-           na.rm = FALSE,
-           conf.interval = .95,
-           .drop = TRUE) {
-    require(plyr)
-    
-    # New version of length which can handle NA's: if na.rm==T, don't count them
-    length2 <- function (x, na.rm = FALSE) {
-      if (na.rm)
-        sum(!is.na(x))
-      else
-        length(x)
-    }
-    
-    # This does the summary. For each group's data frame, return a vector with
-    # N, mean, and sd
-    datac <- ddply(
-      data,
-      groupvars,
-      .drop = .drop,
-      .fun = function(xx, col) {
-        c(
-          N    = length2(xx[[col]], na.rm = na.rm),
-          mean = mean   (xx[[col]], na.rm = na.rm),
-          sd   = sd     (xx[[col]], na.rm = na.rm)
-        )
-      },
-      measurevar
-    )
-    
-    # Rename the "mean" column
-    datac <- rename(datac, c("mean" = measurevar))
-    
-    datac$se <-
-      datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
-    
-    # Confidence interval multiplier for standard error
-    # Calculate t-statistic for confidence interval:
-    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
-    ciMult <- qt(conf.interval / 2 + .5, datac$N - 1)
-    datac$ci <- datac$se * ciMult
-    
-    return(datac)
-  }
-
-```
-
 ```{r missing data, include = FALSE}
 
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+# This code is a part of Stokes' replication and her code comments.
 
 dt <- divisions
-
-# Shows the amount
 
 length(which(is.na(dt$log_pop))) / nrow(dt) #1%
 
@@ -238,7 +160,7 @@ length(which(is.na(dt$p_immigrant))) / nrow(dt) #2%
 
 length(which(is.na(dt$p_housing_own))) / nrow(dt) #2%
 
-#subset the data by year
+# The above show the lengths.
 
 d2007 <- dt[which(dt$year == 2007),]
 
@@ -246,7 +168,7 @@ d2011 <- dt[which(dt$year == 2011),]
 
 d2003 <- dt[which(dt$year == 2003),]
 
-# Eliminate missing data by setting missing values equal to the mean for each year and variable
+# The above subset the data by year.
 
 d2007$log_pop_denc[which(is.na(d2007$log_pop_denc))] <-
   mean(d2007$log_pop_denc, na.rm = T)
@@ -329,13 +251,12 @@ d2003$p_immigrant[which(is.na(d2003$p_immigrant))] <-
 d2003$p_housing_own[which(is.na(d2003$p_housing_own))] <-
   mean(d2003$p_housing_own, na.rm = T)
 
-
-# put the data back together
+# The above eliminate missing data by setting missing values equal to the mean
+# for each year and variable.
 
 dt <- rbind(d2003, d2007, d2011)
 
-
-#make square terms for each variable - used in entropy balancing
+#Put the data back together.
 
 dt$log_pop_sq <- (dt$log_pop) ^ 2
 
@@ -353,8 +274,7 @@ dt$p_immigrant_sq <- (dt$p_immigrant) ^ 2
 
 dt$p_housing_own_sq <- (dt$p_housing_own) ^ 2
 
-
-#subset
+# The above make square terms for each variable - used in entropy balancing.
 
 d2007 <- dt[which(dt$year == 2007),]
 
@@ -362,20 +282,27 @@ d2011 <- dt[which(dt$year == 2011),]
 
 d2003 <- dt[which(dt$year == 2003),]
 
-
-# overwrite the initial data file with data without missing values
+# The above subset again.
 
 divisions <- dt
+
+# This overwrites the initial data file with data without missing values.
 
 ```
 
 ```{r data construction, include = FALSE}
 
+# I set include = FALSE because I don't want this in my pdf.
+
+# This is code from the replication for constructing the data and Stokes' code
+# comments.
+
 div_rural <-
   divisions[which(divisions$pop_denc <= 400 &
                     divisions$year == 2007),]
 
-# Cut out divisions with population density greater than 400 people per km^2 in 2007. N=3169.
+# Cut out divisions with population density greater than 400 people per km^2 in
+# 2007. N=3169.
 
 # Need to find the matching 2003 and 2011 divisions to complete the panel.
 
@@ -389,7 +316,9 @@ keep <- c(dup_id, dup_id_2)
 
 a <- a[keep,]
 
-length(which(a$year == 2007)) == length(which(a$year == 2011)) # This is a check - you want this to say TRUE.
+length(which(a$year == 2007)) == length(which(a$year == 2011)) 
+
+# This is a check - you want this to say TRUE.
 
 b <- rbind(d2003, div_rural)
 
@@ -401,15 +330,17 @@ keep <- c(dup_id, dup_id_2)
 
 b <- b[keep,]
 
-length(which(b$year == 2007)) == length(which(b$year == 2003)) # This is a check - you want this to say TRUE.
+length(which(b$year == 2007)) == length(which(b$year == 2003)) 
+
+# This is a check - you want this to say TRUE.
 
 div_rural <- rbind(a, b[which(b$year == 2003),])
 
 div_rural$master_id <- droplevels(div_rural$master_id)
 
-#Important before running analysis because master_id is a factor.
+# Important before running analysis because master_id is a factor.
 
-#Check to see all treated units are still in this rural dataset:
+# Check to see all treated units are still in this rural dataset:
 
 propsr <- divisions[which(divisions$prop == 1),]
 
@@ -424,7 +355,7 @@ length(unique(opsr$master_id)) #52
 
 N <- 6186
 
-#Will use X and then X^2 to balance for each variable
+# Will use X and then X^2 to balance for each variable.
 
 X_bal <-
   d2003[, c(
@@ -446,19 +377,24 @@ X_bal <-
     "p_housing_own_sq"
   )]
 
-#variables to balance on, per the paper.
+# Variables to balance on, per the paper.
 
 ebalout <- ebalance(Treatment = d2003$treat_p, X = X_bal)
 
 
-#That only gives weights for controls; I'd like an N-dim vector with all weights:
+# That only gives weights for controls; I'd like an N-dim vector with all
+# weights:
 
 ebalw <-
-  replicate(N, 1) #for every treated unit, give the weight of 1.
+  replicate(N, 1) 
 
-ebalw[d2003$treat_p == 0] = ebalout$w #for every control unit, give the weight from the model.
+# For every treated unit, give the weight of 1.
 
-#Add the proposed variable weights to the dataset
+ebalw[d2003$treat_p == 0] = ebalout$w 
+
+# For every control unit, give the weight from the model.
+
+# Add the proposed variable weights to the dataset.
 
 d2007$weights_p <- ebalw
 
@@ -490,19 +426,26 @@ X_bal <-
     "p_uni_degree_sq",
     "p_immigrant_sq",
     "p_housing_own_sq"
-  )] #variables to balance on, per the paper.
+  )] 
+
+# Variables to balance on, per the paper.
 
 ebalout <- ebalance(Treatment = d2003$treat_o, X = X_bal)
 
 
-#That only gives weights for controls; I'd like an N-dim vector with all weights:
+# That only gives weights for controls; I'd like an N-dim vector with all
+# weights:
 
 ebalw <-
-  replicate(N, 1) #for every treated unit, give the weight of 1.
+  replicate(N, 1) 
 
-ebalw[d2003$treat_o == 0] = ebalout$w #for every control unit, give the weight from the model.
+# For every treated unit, give the weight of 1.
 
-#weights are ebalw...
+ebalw[d2003$treat_o == 0] = ebalout$w 
+
+# For every control unit, give the weight from the model.
+
+# Weights are ebalw...
 
 d2007$weights_o <- ebalw
 
@@ -516,16 +459,29 @@ divisions <- rbind(d2007, d2003, d2011)
 
 ```{r instrument, include = FALSE}
 
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+# This is code from Stokes' replication for creating the instrumental variable
+# and her code comments.
+
 d2011_d <-
-d2011[which(d2011$avg_pwr > 0), ] # Only keeps units with windspeed data greater than 0.
+d2011[which(d2011$avg_pwr > 0), ] 
+
+# Only keeps units with windspeed data greater than 0.
 
 d2007_d <-
-d2007[which(d2007$prop_3km != 1), ] # Removes units already treated in 2007 (within 3 km of turbine).
+d2007[which(d2007$prop_3km != 1), ] 
+
+# Removes units already treated in 2007 (within 3 km of turbine).
 
 ivpanel <-
-rbind(d2007_d, d2011_d) # IV panel does not include 2003 data. It only looks at changes between 2007 and 2011. However, 2003 data is used for robustness checks in SI.
+rbind(d2007_d, d2011_d) 
 
-# Make the panel equally balanced by cutting out units that were removed in one year but not the others.
+# IV panel does not include 2003 data. It only looks at changes between 2007 and
+# 2011. However, 2003 data is used for robustness checks in SI.
+
+# Make the panel equally balanced by cutting out units that were removed in one
+# year but not the others.
 
 a <- ivpanel
 
@@ -537,7 +493,9 @@ keep <- c(dup_id, dup_id_2)
 
 a <- a[keep, ]
 
-length(which(a$year == 2007)) == length(which(a$year == 2011)) # you want this to say TRUE.
+length(which(a$year == 2007)) == length(which(a$year == 2011)) 
+
+# You want this to say TRUE.
 
 b <- a[which(a$year == 2007), ]
 
@@ -551,7 +509,9 @@ keep <- c(dup_id, dup_id_2)
 
 b <- b[keep, ]
 
-length(which(b$year == 2007)) == length(which(b$year == 2003)) # you want this to say TRUE.
+length(which(b$year == 2007)) == length(which(b$year == 2003)) 
+
+# You want this to say TRUE.
 
 a <- a[which(a$year == 2011), ]
 
@@ -563,19 +523,24 @@ ivd <- ivpanel[which(ivpanel$year == 2011), ]
 
 iv07 <- ivpanel[which(ivpanel$year == 2007), ]
 
-sum(ivd$prop_3km) #354 - 2011 treated units, within 3 km of a proposed turbine - we will find matched control units for these.
+sum(ivd$prop_3km) 
+
+# 354 - 2011 treated units, within 3 km of a proposed turbine - we will find
+# matched control units for these.
 
 ivd$chng_lib <-
-ivd$perc_lib - iv07$perc_lib # new DV for instrumental variable cross section -- see Table 2.
+ivd$perc_lib - iv07$perc_lib 
 
-# Create pre-treatment average home value data in IV data
+# New DV for instrumental variable cross section -- see Table 2.
+
+# Create pre-treatment average home value data in IV data.
 
 ivd$avg_home_val_log_07 <- log(iv07$avg_home_val)
 
 ivd$avg_home_val_log_07[which(is.na(ivd$avg_home_val_log_07))] <-
 mean(ivd$avg_home_val_log_07, na.rm = T)
 
-# Create other variables necessary for IV model
+# Create other variables necessary for IV model.
 
 ivd$avg_pwr_log <- log(ivd$avg_pwr)
 
@@ -589,7 +554,8 @@ ivd$lat_sq <- ivd$latitude * ivd$latitude
 
 ivd$long_lat <- ivd$latitude * ivd$longitude
 
-# Find 354 matched pairs for instrumental variable model. Match based of four variables reported in paper. Use 2011 'ivd' dataset created above.
+# Find 354 matched pairs for instrumental variable model. Match based of four
+# variables reported in paper. Use 2011 'ivd' dataset created above.
 
 match.covars <-
 ivd[, c("avg_home_val_log_07",
@@ -597,7 +563,9 @@ ivd[, c("avg_home_val_log_07",
 "log_median_inc",
 "log_pop_denc")]
 
-sum(ivd$prop_3km == 1) #354 - number of treated units
+sum(ivd$prop_3km == 1) 
+
+# 354 - number of treated units.
 
 match <-
 Match(
@@ -608,23 +576,39 @@ estimand = "ATT",
 M = 1,
 exact = c(F, F, F, F),
 replace = FALSE
-) # Finding 1 controls for each unit and not allowing reuse. Matches do not have to be exact.
+) 
+
+# Finding 1 controls for each unit and not allowing reuse. Matches do not have
+# to be exact.
 
 matchobj_tr <-
-ivd[match$index.treated, ] # these are the treated units
+ivd[match$index.treated, ] 
+
+# These are the treated units.
 
 matchobj_ct <-
-ivd[match$index.control, ] # these are the control units
+ivd[match$index.control, ] 
+
+# These are the control units
 
 matchobj <-
-rbind(matchobj_tr, matchobj_ct) # matched dataset, for instrument analysis
+rbind(matchobj_tr, matchobj_ct) 
+
+# Matched dataset, for instrument analysis.
 
 ```
 
+```{r table 1 extension, include= FALSE}
 
-### Extension
+# I set include = FALSE because I don't want this to appear on my pdf. This is
+# the beginning of my extensions where I am constructing the Bayesian models
+# based of Stokes' linear models. I utilize her demeaner function but I do not
+# use the clustering function.
 
-```{r table 1 replication, include= FALSE}
+# This includes both comments regarding my extension modifications and Stokes'
+# original code comments.
+
+# Column 1 (All Precincts), Section 1 (Turbine Proposal)
 
 yx_data <- divisions[, c("perc_lib", "prop")]
 
@@ -639,11 +623,19 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 set.seed(1000)
 
 rep_1 <-stan_glm(vote ~ prop + Y2003 + Y2007, data = yx_diffed, refresh = 0, family = "binomial")
 
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
+
 # Column 1 (All Precincts), Section 2 (Turbine Operational)
+
 # Using panel demeaning function
 
 yx_data <- divisions[, c("perc_lib", "op")]
@@ -659,7 +651,14 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_2 <- stan_glm(vote ~ op + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0)
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 2 (All Precincts with Controls), Section 1 (Turbine Proposal)
 
@@ -681,15 +680,24 @@ yx_diffed <-
     yx = yx_data,
     T = as.factor(divisions$year),
     group = divisions$master_id
-  ) # group needs to be a factor as well
+  ) 
+
+# Group needs to be a factor as well.
 
 yx_diffed <- yx_diffed %>% 
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_3 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
     data = yx_diffed, family = "binomial", refresh = 0)
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 2 (All Precincts with Controls), Section 2 (Turbine Operational)
 
@@ -711,20 +719,32 @@ yx_diffed <-
     yx = yx_data,
     T = as.factor(divisions$year),
     group = divisions$master_id
-  ) # group needs to be a factor as well
+  ) 
+
+# Group needs to be a factor as well.
 
 yx_diffed <- yx_diffed %>% 
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_4 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
     data = yx_diffed, family = "binomial", refresh = 0)
 
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
+
 # Column 3 (Rural Precincts), Section 1 (Turbine Proposal)
 
 div_rural <-
-  droplevels(div_rural) #Note: you need to have created the rural subset in Data Construction section above.
+  droplevels(div_rural) 
+
+# Note: you need to have created the rural subset in Data Construction section
+# above.
 
 yx_data <- div_rural[, c("perc_lib", "prop")]
 
@@ -739,7 +759,14 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_5 <- stan_glm(vote ~ prop + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0)
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 3 (Rural Precincts), Section 2 (Turbine Operational)
 
@@ -752,16 +779,25 @@ yx_diffed <-
     yx = yx_data,
     T = as.factor(div_rural$year),
     group = div_rural$master_id
-  ) # change dataset
+  ) 
+
+# Change dataset.
 
 yx_diffed <- yx_diffed %>% 
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_6 <-
   stan_glm(vote ~ op + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0) 
 
-#change treatment variable
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
+
+# Change treatment variable
 
 # Column 4 (Rural Precincts with Controls), Section 1 (Turbine Proposal)
 
@@ -789,9 +825,16 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_7 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
     data = yx_diffed, family = "binomial", refresh = 0)
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 4 (Rural Precincts with Controls), Section 2 (Turbine Operational)
 
@@ -819,9 +862,16 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_8 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
     data = yx_diffed, family = "binomial", refresh = 0)
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 5 (Balanced Precincts), Section 1 (Turbine Proposal)
 
@@ -838,12 +888,18 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
-rep_9 <-
-  stan_glm(vote ~ prop + Y2003 + Y2007,
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
+rep_9 <- stan_glm(vote ~ prop + Y2003 + Y2007,
      data = yx_diffed, family = "binomial", refresh = 0,
      weights = divisions$weights_p) 
 
-# add in weights
+# Add in weights.
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 5 (Balanced Precincts), Section 2 (Turbine Operational)
 
@@ -860,10 +916,14 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_10 <-
   stan_glm(vote ~ op + Y2003 + Y2007,
      data = yx_diffed, refresh = 0, family = "binomial",
-     weights = divisions$weights_o) # add in weights
+     weights = divisions$weights_o) 
+# add in weights
 
 # Column 6 (Balanced Precincts), Section 1 (Turbine Proposal)
 
@@ -889,11 +949,20 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_11 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
     data = yx_diffed, family = "binomial", refresh = 0, 
     weights = divisions$weights_p
-  ) # add in weights
+  ) 
+
+# Add in weights.
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 # Column 6 (Balanced Precincts), Section 2 (Turbine Operational)
 
@@ -919,19 +988,249 @@ yx_diffed <- yx_diffed %>%
   mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
   mutate(vote = as.numeric(vote))
 
+# Here is where I create the new binary variable to test the effect of voting
+# for the incumbent or not.
+
 rep_12 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
     data = yx_diffed, family = "binomial", refresh = 0,
     weights = divisions$weights_o
-  ) # add in weights
+  ) 
+
+# Add in weights.
+
+# Here is where I create my model. It is important to specify that family =
+# "binomial" otherwise stan_glm() will assume that you are running a linear
+# regression, which would be no different than Stokes' models.
 
 ```
+
+```{r making data frames, include = FALSE}
+
+library(janitor)
+
+one <- as.data.frame(rep_1) %>% 
+  clean_names()
+
+two <- as.data.frame(rep_2) %>% 
+  clean_names()
+
+three <- as.data.frame(rep_3) %>% 
+  clean_names()
+
+four <- as.data.frame(rep_4) %>% 
+  clean_names()
+
+nine <- as.data.frame(rep_9) %>% 
+  clean_names()
+
+ten <- as.data.frame(rep_10) %>% 
+  clean_names()
+
+eleven <- as.data.frame(rep_11) %>% 
+  clean_names()
+
+twelve <- as.data.frame(rep_12) %>% 
+  clean_names()
+
+```
+
+Stokes (2015) proved that voters do pay attention to climate policy and afterwards penalize the incumbent governments for facilities viewed as harmful to the communities. She demonstrated using fixed effect variables and instrumental variables that people living near wind turbines in Ontario, Canada will retrospectively vote against incumbent governments in retailiation to climate policy that led to the develop of wind turbines in their communities. In my extension of her work, I examined the treatment effect of the fixed effect on whether or not voters were likely to support the incumbent through Bayesian probability. 
+
+When creating a binary variable to which determined if voters were likely or unlikely to support the incumbent, the data revealed that amongst all groups, there was a more likely chance of voters supporting the incumbent than not. Additionally, balanced precincts tended to have higher incumbent support than all precincts.
+
+The Bayesian regression that I had ran for this extension was based upon Stokes (2015) linear regressions. Instead of using the vote share variable, I created a new variable called "vote" which indicates whether or not the vote was likely to support the incumbent or not based upon the vote share numbers. If the vote share was greater than 0, it was given the value of 1, indicating incumbent support. If the vote share was less than 0, it was given the value of 0, indicating non-incumbent support. I then kept all other regressors used in Stokes' models the same. Within my model, I denoted for family = "binomial", as the stan_glm() function will simply assume that the operator wants a linear regression with the distinction. Without this, there would be no difference in the regression model Stokes ran. 
+
+The coefficient of the intercept of the Bayesian regressions represent the likelihood whether voters will support the incumbent government based upon the same regressors as Stokes had used. With all models showing slight favoritism toward supporting the incumbent, the results complicate Stokes' conclusion that proximity to wind turbine implementations will have negative effects retrospectively on incumbent voter support. This extension may reveal that Stokes' model is not as robust as she may have assumed, though I also did not use a clustering function which may have made a difference. This extension continues the discussion on whether we can predict voter behavior in response to policy implementation at large. 
+
+```{r histograms}
+
+ggplot(three, aes(intercept)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept = mean(intercept)), color = "red", linetype = "solid")  +
+  labs(title = "Distribution of Coefficients for the Average Treatment of Fixed Effect on Voting for the Incumbent",
+       subtitle = "All Precincts - Turbine Proposal",
+       x = "Coefficient",
+       y = "Count",
+       caption = "The average treatment effect on voting for the incumbent is 0.0408. \n This indicates that voters are more likely to support the incumbent.") +
+  theme(plot.title = element_text(size = 11, hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+ggplot(four, aes(intercept)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept = mean(intercept)), color = "red", linetype = "solid")  +
+  labs(title = "Distribution of Coefficients for the Average Treatment of Fixed Effect on Voting for the Incumbent",
+       subtitle = "All Precincts - Turbine Operational",
+       x = "Coefficient",
+       y = "Count",
+       caption = "The average treatment effect on voting for the incumbent is 0.0410. \n This indicates that voters are more likely to support the incumbent.") +
+  theme(plot.title = element_text(size = 11, hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+ggplot(eleven, aes(intercept)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept = mean(intercept)), color = "red", linetype = "solid")  +
+  labs(title = "Distribution of Coefficients for the Average Treatment Effect on the Treated on Voting for the Incumbent",
+       subtitle = "Balanced Precincts - Turbine Proposal",
+       x = "Coefficient",
+       y = "Count",
+       caption = "The average treatment effect on voting for the incumbent is 0.1543. \n This indicates that voters are more likely to support the incumbent.") +
+  theme(plot.title = element_text(size = 10, hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+ggplot(twelve, aes(intercept)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept = mean(intercept)), color = "red", linetype = "solid")  +
+  labs(title = "Distribution of Coefficients for the Average Treatment Effect on the Treated on Voting for the Incumbent",
+       subtitle = "Balanced Precincts - Turbine Operational",
+       x = "Coefficient",
+       y = "Count",
+       caption = "The average treatment effect on voting for the incumbent is 0.1815. \n This indicates that voters are more likely to support the incumbent.") +
+  theme(plot.title = element_text(size = 10, hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+```
+
 
 ### Appendix
 
 ![ ](table_1.png)
 
-```{r table 1 regressions}
+
+```{r vcov cluster function with demean, include=FALSE}
+
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+# This is code for one of many of Stokes' functions from the replication code.
+
+vcovCluster_demean <- function(model, cluster, first)
+{
+  require(sandwich)
+  require(lmtest)
+  cluster <- droplevels(cluster)
+  if (nrow(model.matrix(model)) != length(cluster)) {
+    stop("check your data: cluster variable has different N than model")
+  }
+  M <- length(unique(cluster))
+  N <- length(cluster)
+  K <- model$rank
+  if (M < 50) {
+    warning(
+      "Fewer than 50 clusters, variances may be unreliable (could try block bootstrap instead)."
+    )
+  }
+  dfc <-
+    (M / (M - 1)) * ((N - 1) / (N - K - first)) 
+  
+# NOTE: need to change this 6186 if the clusters is different
+  
+  uj  <-
+    apply(estfun(model), 2, function(x)
+      tapply(x, cluster, sum))
+  
+  rcse.cov <- dfc * sandwich(model, meat = crossprod(uj) / N)
+  return(rcse.cov)
+}
+
+```
+
+```{r vcov cluster function, include=FALSE}
+
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+# This is code for one of many of Stokes' functions from the replication code.
+
+vcovCluster <- function(model, cluster)
+{
+  require(sandwich)
+  require(lmtest)
+  if (nrow(model.matrix(model)) != length(cluster)) {
+    stop("check your data: cluster variable has different N than model")
+  }
+  M <- length(unique(cluster))
+  N <- length(cluster)
+  K <- model$rank
+  if (M < 50) {
+    warning(
+      "Fewer than 50 clusters, variances may be unreliable (could try block bootstrap instead)."
+    )
+  }
+  dfc <- (M / (M - 1)) * ((N - 1) / (N - K))
+  uj  <-
+    apply(estfun(model), 2, function(x)
+      tapply(x, cluster, sum))
+  
+  rcse.cov <- dfc * sandwich(model, meat = crossprod(uj) / N)
+  return(rcse.cov)
+}
+
+```
+
+```{r summarize function, include=FALSE}
+
+# I set include = FALSE because I don't want this to appear on my pdf.
+
+# This is code for one of many of Stokes' functions from the replication code.
+
+summarySE <-
+  function(data = NULL,
+           measurevar,
+           groupvars = NULL,
+           na.rm = FALSE,
+           conf.interval = .95,
+           .drop = TRUE) {
+    require(plyr)
+    
+# New version of length which can handle NA's: if na.rm==T, don't count them.
+    
+    length2 <- function (x, na.rm = FALSE) {
+      if (na.rm)
+        sum(!is.na(x))
+      else
+        length(x)
+    }
+    
+# This does the summary. For each group's data frame, return a vector with
+# N, mean, and sd.
+    
+    datac <- ddply(
+      data,
+      groupvars,
+      .drop = .drop,
+      .fun = function(xx, col) {
+        c(
+          N    = length2(xx[[col]], na.rm = na.rm),
+          mean = mean   (xx[[col]], na.rm = na.rm),
+          sd   = sd     (xx[[col]], na.rm = na.rm)
+        )
+      },
+      measurevar
+    )
+    
+# Rename the "mean" column.
+    
+    datac <- rename(datac, c("mean" = measurevar))
+    
+    datac$se <-
+      datac$sd / sqrt(datac$N)  
+    
+    # Calculate standard error of the mean
+    
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval:
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    
+    ciMult <- qt(conf.interval / 2 + .5, datac$N - 1)
+    datac$ci <- datac$se * ciMult
+    
+    return(datac)
+  }
+
+```
+
+
+```{r table 1 col 1, include=FALSE}
+
 set.seed(1000)
 
 yx_data <- divisions[, c("perc_lib", "prop")]
@@ -944,6 +1243,10 @@ yx_diffed <-
   )
 
 mod_1 <- lm(perc_lib ~ prop + Y2003 + Y2007, data = yx_diffed)
+```
+
+
+```{r table 1 column 1 output, message=FALSE, warning=FALSE}
 
 print(round(coeftest(
     mod_1,
@@ -957,6 +1260,11 @@ print(round(coeftest(
 # Column 1 (All Precincts), Section 2 (Turbine Operational)
 # Using panel demeaning function
 
+```
+
+
+```{r table 2 column 1, include=FALSE}
+
 yx_data <- divisions[, c("perc_lib", "op")]
 
 yx_diffed <-
@@ -967,6 +1275,10 @@ yx_diffed <-
   )
 
 mod_2 <- lm(perc_lib ~ op + Y2003 + Y2007, data = yx_diffed)
+```
+
+
+```{r table 2 column 1 output, message=FALSE, warning=FALSE}
 
 print(round(coeftest(
     mod_2,
@@ -976,6 +1288,10 @@ print(round(coeftest(
       first = nrow(divisions) / 3
     )
   ), 3))
+
+```
+
+```{r table 1 column 2, include=FALSE}
 
 # Column 2 (All Precincts with Controls), Section 1 (Turbine Proposal)
 
@@ -1005,6 +1321,10 @@ mod_3 <-
     data = yx_diffed
   )
 
+```
+
+```{r table 1 column 2 ouput, message=FALSE, warning=FALSE}
+
 print(round(coeftest(
     mod_3,
     vcov = vcovCluster_demean(
@@ -1013,6 +1333,11 @@ print(round(coeftest(
       first = nrow(divisions) / 3
     )
   ), 3))
+
+```
+
+
+```{r table 2 column 2, include=FALSE}
 
 # Column 2 (All Precincts with Controls), Section 2 (Turbine Operational)
 
@@ -1042,6 +1367,11 @@ mod_4 <-
     data = yx_diffed
   )
 
+```
+
+
+```{r table 2 column 2 output, message=FALSE, warning=FALSE}
+
 print(round(coeftest(
     mod_4,
     vcov = vcovCluster_demean(
@@ -1050,6 +1380,7 @@ print(round(coeftest(
       first = nrow(divisions) / 3
     )
   ), 3))
+
 ```
 
 
@@ -1180,8 +1511,7 @@ round(coeftest(
 ```
 
 
-```{r table 1 regressions balanced, include=FALSE}
-
+```{r table 1 column 5, include=FALSE}
 # Column 5 (Balanced Precincts), Section 1 (Turbine Proposal)
 
 yx_data <- divisions[, c("perc_lib", "prop")]
@@ -1197,6 +1527,10 @@ mod_9 <-
   lm(perc_lib ~ prop + Y2003 + Y2007,
      data = yx_diffed,
      weights = divisions$weights_p) # add in weights
+```
+
+
+```{r table 1 column 5 output, message=FALSE, warning=FALSE}
 
 print(round(coeftest(
     mod_9,
@@ -1206,6 +1540,10 @@ print(round(coeftest(
       first = nrow(divisions) / 3
     )
   ), 3))
+```
+
+
+```{r table 2 column 5, include=FALSE}
 
 # Column 5 (Balanced Precincts), Section 2 (Turbine Operational)
 
@@ -1223,6 +1561,10 @@ mod_10 <-
      data = yx_diffed,
      weights = divisions$weights_o) # add in weights
 
+```
+
+```{r table 2 column 5 output, warning=FALSE, message=FALSE}
+
 print(round(coeftest(
     mod_10,
     vcov = vcovCluster_demean(
@@ -1231,6 +1573,10 @@ print(round(coeftest(
       first = nrow(divisions) / 3
     )
   ), 3))
+
+```
+
+```{r table 1 column 6, include=FALSE}
 
 # Column 6 (Balanced Precincts), Section 1 (Turbine Proposal)
 
@@ -1259,6 +1605,11 @@ mod_11 <-
     weights = divisions$weights_p
   ) # add in weights
 
+```
+
+
+```{r table 1 column 6 output, warning=FALSE, message=FALSE}
+
 print(round(coeftest(
     mod_11,
     vcov = vcovCluster_demean(
@@ -1267,6 +1618,11 @@ print(round(coeftest(
       first = nrow(divisions) / 3
     )
   ), 3))
+
+```
+
+
+```{r table 2 column 6, include=FALSE}
 
 # Column 6 (Balanced Precincts), Section 2 (Turbine Operational)
 
@@ -1295,6 +1651,11 @@ mod_12 <-
     weights = divisions$weights_o
   ) # add in weights
 
+```
+
+
+```{r table 2 column 6 output, message=FALSE, warning=FALSE}
+
 print(round(coeftest(
     mod_12,
     vcov = vcovCluster_demean(
@@ -1306,10 +1667,7 @@ print(round(coeftest(
 
 ```
 
-
-![ ](table_2.png)
-
-```{r table two replication}
+```{r table two replication, include=FALSE}
 
 first <-
   lm(
@@ -1518,3 +1876,5 @@ round(coeftest(mod_4, vcov = vcovCluster_demean(
   )), 3) 
   
 ```
+
+
