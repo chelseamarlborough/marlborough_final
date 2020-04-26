@@ -11,7 +11,7 @@ Stokes (2015) finds that voters do pay attention to climate policy and afterward
 
 ### Introduction
 
-The first piece of this paper was a replication of Stokes' results. Here code and data are publically available on the Harvard Dataverse. In order to replicate her results, I ran her orignial code using R code. I was easily able to run the code for both the tables and figures, but the code for formatting the tables in LaTex was not provided on Dataverse. Instead, I opted to analyze the raw output of the regressions from my replications. All code for the replication is available in my GitHub repository.
+The first piece of this paper was a replication of Stokes' results. Here code and data are publically available on the Harvard Dataverse. In order to replicate her results, I ran her orignial code using R code. I was easily able to run the code for both the tables and figures, but the code for formatting the tables in LaTex was not provided on Dataverse. I also was unable to create Figure 1, as code was also not provided. Instead, I opted to analyze the raw output of the regressions from my replications. All code for the replication is available in my GitHub repository.
 
 After the replication, in my extension of Stoke's work I test the strength of Stokes' model by running a Bayesian regression upon it. In order to perform this treatment effect, I created a new variable named "effect" that is deprived from "perc_lib". According to Stokes' codebook, "perc_lib" represents the votes cast for the Liberal Party divided by the number of voters who cast ballots in the precinct. In other words, "perc_lib" is equivalent to vote share. If the vote share is greater than 0, it is equal to 1 in "effect". If the vote share is less than 0, it is equal to 0 in "effect". I then replaced Stokes' linear regressions with Bayesian ones and replaced "perc_lib" with "effect". 
 
@@ -69,7 +69,7 @@ divisions$fed_id <- as.factor(divisions$fed_id)
 
 ```
 
-```{r demeanor function, include=FALSE}
+```{r demeaner function, include=FALSE}
 
 demeaner <- function(yx, T, group, w = NULL) {
   conds <- length(levels(T))
@@ -101,8 +101,6 @@ demeaner <- function(yx, T, group, w = NULL) {
   }
   
   colnames(yx2) <- colnames(yx)
-  
-  rm(yx)
   
   yx2 = as.data.frame(yx2)
   return(yx2)
@@ -544,8 +542,6 @@ a <- a[keep, ]
 
 length(which(a$year == 2007)) == length(which(a$year == 2011)) # you want this to say TRUE.
 
-rm(dup_id, dup_id_2, keep)
-
 b <- a[which(a$year == 2007), ]
 
 b <- rbind(b, d2003)
@@ -626,11 +622,8 @@ ivd[match$index.control, ] # these are the control units
 matchobj <-
 rbind(matchobj_tr, matchobj_ct) # matched dataset, for instrument analysis
 
-rm(match.covars, ivd, iv07, ivpanel, match)
-
 ```
 
-### Tables and Figures
 
 ```{r table 1, include=FALSE}
 
@@ -1216,11 +1209,7 @@ round(coeftest(mod_4, vcov = vcovCluster_demean(
 
 ```{r table 1 replication, include= FALSE}
 
-set.seed(14)
-
-yx_data <- divisions[, c("perc_lib", "prop")] %>% 
-  mutate(effect = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(effect = as.numeric(effect))
+yx_data <- divisions[, c("perc_lib", "prop")]
 
 yx_diffed <-
   demeaner(
@@ -1229,10 +1218,13 @@ yx_diffed <-
     group = divisions$master_id
   )
 
-#yx_diffed <- yx_diffed %>% 
-#  mutate(effect = ifelse(perc_lib >= 0, "1", "0"))
+yx_diffed <- yx_diffed %>% 
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
-#mod_1 <-stan_glm(effect ~ prop + Y2003 + Y2007, data = yx_diffed, refresh = 0, family = "binary")
+set.seed(1000)
+
+mod_1 <-stan_glm(vote ~ prop + Y2003 + Y2007, data = yx_diffed, refresh = 0, family = "binomial")
 
 # Column 1 (All Precincts), Section 2 (Turbine Operational)
 # Using panel demeaning function
@@ -1247,10 +1239,10 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
-mod_2 <- stan_glm(test ~ op + Y2003 + Y2007, data = yx_diffed)
+mod_2 <- stan_glm(vote ~ op + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0)
 
 # Column 2 (All Precincts with Controls), Section 1 (Turbine Proposal)
 
@@ -1275,14 +1267,12 @@ yx_diffed <-
   ) # group needs to be a factor as well
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_3 <-
-  stan_glm(
-    test ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed
-  )
+  stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed, family = "binomial", refresh = 0)
 
 # Column 2 (All Precincts with Controls), Section 2 (Turbine Operational)
 
@@ -1307,14 +1297,12 @@ yx_diffed <-
   ) # group needs to be a factor as well
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_4 <-
-  stan_glm(
-    test ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed
-  )
+  stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed, family = "binomial", refresh = 0)
 
 # Column 3 (Rural Precincts), Section 1 (Turbine Proposal)
 
@@ -1331,10 +1319,10 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
-mod_5 <- stan_glm(test ~ prop + Y2003 + Y2007, data = yx_diffed)
+mod_5 <- stan_glm(vote ~ prop + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0)
 
 # Column 3 (Rural Precincts), Section 2 (Turbine Operational)
 
@@ -1350,11 +1338,13 @@ yx_diffed <-
   ) # change dataset
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_6 <-
-  stan_glm(test ~ op + Y2003 + Y2007, data = yx_diffed) #change treatment variable
+  stan_glm(vote ~ op + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0) 
+
+#change treatment variable
 
 # Column 4 (Rural Precincts with Controls), Section 1 (Turbine Proposal)
 
@@ -1379,14 +1369,12 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_7 <-
-  stan_glm(
-    test ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed
-  )
+  stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed, family = "binomial", refresh = 0)
 
 # Column 4 (Rural Precincts with Controls), Section 2 (Turbine Operational)
 
@@ -1411,14 +1399,12 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_8 <-
-  stan_glm(
-    test ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed
-  )
+  stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed, family = "binomial", refresh = 0)
 
 # Column 5 (Balanced Precincts), Section 1 (Turbine Proposal)
 
@@ -1432,13 +1418,15 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_9 <-
-  stan_glm(test ~ prop + Y2003 + Y2007,
-     data = yx_diffed,
-     weights = divisions$weights_p) # add in weights
+  stan_glm(vote ~ prop + Y2003 + Y2007,
+     data = yx_diffed, family = "binomial", refresh = 0,
+     weights = divisions$weights_p) 
+
+# add in weights
 
 # Column 5 (Balanced Precincts), Section 2 (Turbine Operational)
 
@@ -1452,12 +1440,12 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_10 <-
-  stan_glm(test ~ op + Y2003 + Y2007,
-     data = yx_diffed,
+  stan_glm(vote ~ op + Y2003 + Y2007,
+     data = yx_diffed, refresh = 0, family = "binomial",
      weights = divisions$weights_o) # add in weights
 
 # Column 6 (Balanced Precincts), Section 1 (Turbine Proposal)
@@ -1481,13 +1469,12 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_11 <-
-  stan_glm(
-    test ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed,
+  stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed, family = "binomial", refresh = 0, 
     weights = divisions$weights_p
   ) # add in weights
 
@@ -1512,13 +1499,12 @@ yx_diffed <-
   )
 
 yx_diffed <- yx_diffed %>% 
-  mutate(test = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(test = as.numeric(test))
+  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
+  mutate(vote = as.numeric(vote))
 
 mod_12 <-
-  stan_glm(
-    test ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed,
+  stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
+    data = yx_diffed, family = "binomial", refresh = 0,
     weights = divisions$weights_o
   ) # add in weights
 
@@ -1527,5 +1513,33 @@ mod_12 <-
 ### Appendix
 
 ![ ](table_1.png)
+
+```{r table 1 regressions, include = FALSE}
+
+yx_data <- divisions[, c("perc_lib", "op")]
+
+yx_diffed <-
+  demeaner(
+    yx = yx_data,
+    T = as.factor(divisions$year),
+    group = divisions$master_id
+  )
+
+mod_2 <- lm(perc_lib ~ op + Y2003 + Y2007, data = yx_diffed)
+
+round(coeftest(
+    mod_2,
+    vcov = vcovCluster_demean(
+      mod_2,
+      cluster = divisions$master_id,
+      first = nrow(divisions) / 3
+    )
+  ), 3)
+
+```
+```{r}
+summary(mod_2, digits = 3)
+```
+
 
 ![ ](table_2.png)
