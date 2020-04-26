@@ -23,7 +23,9 @@ Throughout this paper, I will investigate Stokes' paper through literature revie
 
 ### Literature Review
 
+### Replication
 
+I was able to easily replicate all of Stokes' figures and tables based upon her original code. The only figure that I could not replicate was Figure 1, as the code was not provided. 
 
 ```{r setup, include=FALSE}
 
