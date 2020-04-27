@@ -2,7 +2,10 @@
 title: "Climate Policy and Incumbent Support"
 author: "Chelsea Marlborough"
 date: "4/25/2020"
-output: html_document
+output: bookdown::pdf_document2
+bibliography: bib.bib
+#biblio-style: "apalike"
+link-citations: true
 ---
 
 ### Abstract
@@ -13,7 +16,7 @@ Stokes (2015) finds that voters do pay attention to climate policy and afterward
 
 Stokes (2015) uses data that from 26 districts in Ontario, Canada where renewable wind projects were proposed or operational to determine whether people living near wind turbines vote against incumbent governments to punish them for climate policy regarding incentives for infrastructure in their local communities (Stokes 2015). During Onatrio's 2003 election, the Liberal Party bid with a plan to exhaust coal usage. After winning the election and having eight years of power, the Liberals implemented a "feed-in-tariff" policy which aimed to remove coal usage, reduce greenhouse emissions, and boost job opportunities within the provinces (Stokes 2015). They focused the policy around the use of wind energy development and provided substantial returns on investment and many company began to opt-in to develop wind projects in areas with high wind resources, all of which excluded the communities' input on whether they desired to receive the structures (Stokes 2015). The data collected is from the 2003, 2007, and 2011 elections, marking the Liberal Party's beginning of power to them losing majority (Stokes 2015). To ensure the robustness of her model, Stokes utilized a fixed effect estimator, which relies on variation of a unit to indentify causal effects, and a instrumental variable estimator, which relies on cross-sectional comparison to check the fixed effects results (Stokes 2015). The fixed effect estimator was proximity to proposed or operation wind turbine structures and the instrumental variable estimator was wind power. The results of linear regression ran by Stokes show that voters retrospectively punished incumbent governments for facilites viewed as harmful to the communities and that proximity to wind turbines leads them to oppose the development of projects (Stokes 2015). In addition, Stokes that communities were mobilized to vote against proposals, which accounts for the change in the Liberal Party's vote share, and that the voters were informed about climate change due to only punishing incumbent governments to which were responsible for new policies (Stokes 2015).  
 
-The first piece of this paper was a replication of Stokes' results. Code and data are publically available on the Harvard Dataverse. In order to replicate her results, I ran her orignial code using R code. I was easily able to run the code for both the tables and figures, but the code for formatting the tables in LaTex was not provided on Dataverse. I also was unable to create Figure 1, as code was also not provided. Instead, I opted to analyze the raw output of the regressions from my replications. All code for the replication is available in my GitHub repository.
+The first piece of this paper was a replication of Stokes' results. Code and data are publically available on the Harvard Dataverse. In order to replicate her results, I ran her orignial code using R code. I was easily able to run the code for both the tables and figures, but the code for formatting the tables in LaTex was not provided on Dataverse. I also was unable to create Figure 1, as code was also not provided. Instead, I opted to analyze the raw output of the regressions from my replications. All code for the replication is available in my GitHub repository.^[[GitHub repository](https://github.com/chelseamarlborough/marlborough_final)]
 
 After the replication, in my extension of Stoke's work I test the strength of Stokes' model by running a Bayesian regression upon it. In order to perform this treatment effect, I created a new variable named "effect" that is deprived from "perc_lib". According to Stokes' codebook, "perc_lib" represents the votes cast for the Liberal Party divided by the number of voters who cast ballots in the precinct. In other words, "perc_lib" is equivalent to vote share. If the vote share is greater than 0, it is equal to 1 in "vote". If the vote share is less than 0, it is equal to 0 in "vote". I then replaced Stokes' linear regressions with Bayesian ones and replaced "perc_lib" with "vote". This design is used to predict the probability of voting for the incumbent. 
 
@@ -1118,6 +1121,7 @@ In my extension, I tested whether or not voters were likely to vote for the incu
 
 ![ ](table_1.png)
 
+Results from Stokes (2015) were successfully replicated. As an example, here are some outputs of models from Table 1 from page 967. The actual tables were difficult to format, but I was able to produce the same numbers found within them. 
 
 ```{r vcov cluster function with demean, include=FALSE}
 
@@ -2609,4 +2613,4 @@ ggplot(plot_op_omit, aes(y = ATT, x = dist)) +
 
 # References
 
-[@stokes2016electoral, @cass2009emotion, @kiewiet2000economic, @aldrich2010site, @bechtel2011lasting]
+[@aldrich2010site, @bechtel2011lasting, @cass2009emotion, @kiewiet2000economic, @stokes2016electoral]
