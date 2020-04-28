@@ -1044,6 +1044,9 @@ eleven <- as.data.frame(rep_11) %>%
 twelve <- as.data.frame(rep_12) %>% 
   clean_names()
 
+# These put all of the coefficients found from my models into data tables. This
+# makes it easier to create the histograms later on.
+
 ```
 
 Stokes (2015) proved that voters do pay attention to climate policy and afterwards penalize the incumbent governments for facilities viewed as harmful to the communities. She demonstrated using fixed effect variables and instrumental variables that people living near wind turbines in Ontario, Canada will retrospectively vote against incumbent governments in retailiation to climate policy that led to the develop of wind turbines in their communities. In my extension of her work, I examined the treatment effect of the fixed effect on whether or not voters were likely to support the incumbent through Bayesian probability. 
@@ -1054,7 +1057,10 @@ The Bayesian regression that I had ran for this extension was based upon Stokes 
 
 The coefficient of the intercept of the Bayesian regressions represent the likelihood whether voters will support the incumbent government based upon the same regressors as Stokes had used. With all models showing slight favoritism toward supporting the incumbent, the results complicate Stokes' conclusion that proximity to wind turbine implementations will have negative effects retrospectively on incumbent voter support. This extension may reveal that Stokes' model is not as robust as she may have assumed, though I also did not use a clustering function which may have made a difference. This extension continues the discussion on whether we can predict voter behavior in response to policy implementation at large. 
 
-```{r histograms}
+```{r histograms, warning=FALSE, message=FALSE}
+
+# I set these equal to false because I don't want them to pop up when running
+# the code or in my pdf.
 
 ggplot(three, aes(intercept)) +
   geom_histogram() +
@@ -1446,9 +1452,10 @@ print(round(coeftest(
 ```
 
 
-```{r table 1 regressions rural, include=FALSE}
+```{r table 1 regressions rural, include=FALSE, eval=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. I set
+# eval = FALSE because I don't want the code to be ran.
 
 # This is Stokes' code for Table 1.
 
@@ -1665,7 +1672,7 @@ print(round(coeftest(
 
 ```{r table 1 column 6, include=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. 
 
 # This is Stokes' code for Table 1.
 
@@ -1770,9 +1777,10 @@ print(round(coeftest(
 
 ```
 
-```{r table two replication, include=FALSE}
+```{r table two replication, include=FALSE, eval=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. I set
+# eval = FALSE because I don't want the code to be ran.
 
 first <-
   lm(
@@ -1811,9 +1819,10 @@ summary(
 
 ```
 
-```{r table 3 replication, include=FALSE}
+```{r table 3 replication, include=FALSE, eval=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. I set
+# eval = FALSE because I don't want the code to be ran.
 
 yx_data <- divisions[, c("perc_turnout", "prop")]
 
@@ -1904,9 +1913,10 @@ round(coeftest(
 
 ```
 
-```{r table 4 replication, include=FALSE}
+```{r table 4 replication, include=FALSE, eval=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. I set
+# eval = FALSE because I don't want the code to be ran.
 
 yx_data <- divisions[, c("perc_lib_fed", "prop")]
 
@@ -1986,105 +1996,105 @@ round(coeftest(mod_4, vcov = vcovCluster_demean(
   
 ```
 
-```{r figure 2, include=FALSE}
+```{r figure 2, include=FALSE, eval=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. I set
+# eval = FALSE because I don't want the code to be ran.
 
-#ptrends <- divisions
+ptrends <- divisions
 
-##ptrends$year2 <- as.character(ptrends$year) # for labelling the plot
+ptrends$year2 <- as.character(ptrends$year) # for labelling the plot
 
-# Left side of plot, Precincts with proposed turbines
+ Left side of plot, Precincts with proposed turbines
 
-#ptrends$status <- ifelse(ptrends$treat_p == 1, "treated", "control")
+ptrends$status <- ifelse(ptrends$treat_p == 1, "treated", "control")
+pt <- summarySE(ptrends, measurevar = "perc_lib", groupvars = c("status", "year2")) 
+First need to run function above.
+pt
+pd <-
+  position_dodge(.15) # The errorbars overlapped, so use position_dodge to move them horizontally
 
-#pt <- summarySE(ptrends, measurevar = "perc_lib", groupvars = c("status", "year2")) 
-# First need to run function above.
-#pt
+plot <-
+  ggplot(pt, aes(
+    x = year2,
+    y = perc_lib,
+    colour = status,
+    group = status
+  )) +
+  geom_line(position = pd, size = 1.40) +
+  scale_colour_manual(values = c("#0072B2", "#B22222")) +
+  geom_errorbar(
+    aes(ymin = perc_lib - ci, ymax = perc_lib + ci),
+    colour = "black",
+    width = .15,
+    position = pd,
+    size = 0.75
+  ) +
+  geom_point(position = pd, size = 2.5)
 
-#pd <-
- # position_dodge(.15) # The errorbars overlapped, so use position_dodge to move them horizontally
+plot +
+  xlab("Election Year") +
+  ylab("Liberal Party Vote Share") +
+  theme(
+    plot.title = element_text(size = 20),
+    axis.text.x = element_text(colour = "black", size = 20),
+    axis.text.y = element_text(colour = "black", size = 20),
+    axis.title.x = element_text(colour = "black", size = 20),
+    axis.title.y = element_text(colour = "black", size = 20),
+    legend.position = "none"
+  ) +
+  scale_y_continuous(labels = percent, limits = c(0.20, 0.57))
 
-#plot <-
- # ggplot(pt, aes(
- #   x = year2,
-  #  y = perc_lib,
-  #  colour = status,
- #   group = status
-#  )) +
- # geom_line(position = pd, size = 1.40) +
- # scale_colour_manual(values = c("#0072B2", "#B22222")) +
- # geom_errorbar(
-   # aes(ymin = perc_lib - ci, ymax = perc_lib + ci),
-   # colour = "black",
-   # width = .15,
-   # position = pd,
-  #  size = 0.75
-  #) +
-#  geom_point(position = pd, size = 2.5)
+ Right side of plot, Precincts with operational turbines
 
-#plot +
- # xlab("Election Year") +
- # ylab("Liberal Party Vote Share") +
- # theme(
-  #  plot.title = element_text(size = 20),
-  #  axis.text.x = element_text(colour = "black", size = 20),
-   # axis.text.y = element_text(colour = "black", size = 20),
-   # axis.title.x = element_text(colour = "black", size = 20),
-   ## axis.title.y = element_text(colour = "black", size = 20),
-   # legend.position = "none"
- # ) +
-  #scale_y_continuous(labels = percent, limits = c(0.20, 0.57))
+ptrends$status <-
+  ifelse(ptrends$treat_o == 1, "treated", "control")
 
-# Right side of plot, Precincts with operational turbines
+pt <-
+  summarySE(ptrends,
+           measurevar = "perc_lib",
+           groupvars = c("status", "year2"))
 
-#ptrends$status <-
-  #ifelse(ptrends$treat_o == 1, "treated", "control")
-#
-#pt <-
-  #summarySE(ptrends,
-  #          measurevar = "perc_lib",
-   #         groupvars = c("status", "year2"))
+pt
 
-##pt
+plot <- ggplot(pt,
+       aes(
+         x = year2,
+          y = perc_lib,
+           colour = status,
+           group = status,
+          ymax = (0.55)
+         )) +
+  geom_line(position = pd, size = 1.40) +
+  scale_colour_manual(values = c("#0072B2", "#B22222")) +
+ geom_errorbar(
+   aes(ymin = perc_lib - ci, ymax = perc_lib + ci),
+  colour = "black",
+    width = .15,
+    position = pd,
+    size = 0.75
+  ) +
+  geom_point(position = pd, size = 2.5)
 
-#plot <- ggplot(pt,
-      #   aes(
-    #       x = year2,
-     #      y = perc_lib,
-     #      colour = status,
-      #     group = status,
-      #     ymax = (0.55)
-       #  )) +
- # geom_line(position = pd, size = 1.40) +
- # scale_colour_manual(values = c("#0072B2", "#B22222")) +
-#  geom_errorbar(
- #   aes(ymin = perc_lib - ci, ymax = perc_lib + ci),
-  #  colour = "black",
-  #  width = .15,
-  #  position = pd,
-  #  size = 0.75
- # ) +
-  ##geom_point(position = pd, size = 2.5)
-
-#plot +
- # xlab("Election Year") +
- # ylab("Liberal Party Vote Share") +
- # theme(
- #   plot.title = element_text(size = 20),
-  #  axis.text.x = element_text(colour = "black", size = 20),
- #   axis.text.y = element_text(colour = "black", size = 20),
-  #  axis.title.x = element_text(colour = "black", size = 20),
-  #  axis.title.y = element_text(colour = "black", size = 20),
-   # legend.position = "none"
- # ) +
- # scale_y_continuous(labels = percent, limits = c(0.20, 0.57)) 
+plot +
+  xlab("Election Year") +
+  ylab("Liberal Party Vote Share") +
+  theme(
+   plot.title = element_text(size = 20),
+  axis.text.x = element_text(colour = "black", size = 20),
+  axis.text.y = element_text(colour = "black", size = 20),
+  axis.title.x = element_text(colour = "black", size = 20),
+  axis.title.y = element_text(colour = "black", size = 20),
+  legend.position = "none"
+ ) +
+ scale_y_continuous(labels = percent, limits = c(0.20, 0.57)) 
   
 ```
 
-```{r figure 3 code, include = FALSE}
+```{r figure 3 code, include = FALSE, eval=FALSE}
 
-# I set include = FALSE because I don't want this to appear on my pdf.
+# I set include = FALSE because I don't want this to appear on my pdf. I set
+# eval = FALSE because I don't want the code to be ran.
 
 plot_prop_omit <-
   data.frame(
