@@ -613,8 +613,7 @@ rbind(matchobj_tr, matchobj_ct)
 
 # I set include = FALSE because I don't want this to appear on my pdf. This is
 # the beginning of my extensions where I am constructing the Bayesian models
-# based of Stokes' linear models. I utilize her demeaner function but I do not
-# use the clustering function.
+# based of Stokes' linear models.
 
 # This includes both comments regarding my extension modifications and Stokes'
 # original code comments.
@@ -634,11 +633,20 @@ yx_data <-
     "p_immigrant"
   )]
 
+# Stokes' dataframe.
+
 yx_data <- yx_data %>% 
   mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
 
+# Here is where I create my binary variable that supports voting for the
+# incumbent or not.
+
 yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
   mutate(vote = incumb_vote)
+
+# Here I isolate the incumbent vote variable so I can use it later. If I don't
+# isolate, it will be transformed in Stokes' fixed effects function.
+
 
 yx_diffed <-
   demeaner(
@@ -647,9 +655,13 @@ yx_diffed <-
     group = divisions$master_id
   ) 
 
+# Fixed effect function.
+
 # Group needs to be a factor as well.
 
 new <- cbind(yx_diffed, yx_incumb)
+
+# Here I combine the isolated column to the new data frame.
 
 rep_3 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
@@ -674,11 +686,19 @@ yx_data <-
     "p_immigrant"
   )]
 
+# Stokes' dataframe.
+
 yx_data <- yx_data %>% 
   mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
 
+# Here is where I create my binary variable that supports voting for the
+# incumbent or not.
+
 yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
   mutate(vote = incumb_vote)
+
+# Here I isolate the incumbent vote variable so I can use it later. If I don't
+# isolate, it will be transformed in Stokes' fixed effects function.
 
 yx_diffed <-
   demeaner(
@@ -687,9 +707,13 @@ yx_diffed <-
     group = divisions$master_id
   ) 
 
+# Fixed effect function.
+
 # Group needs to be a factor as well.
 
 new <- cbind(yx_diffed, yx_incumb)
+
+# Here I combine the isolated column to the new data frame.
 
 rep_4 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
@@ -713,11 +737,19 @@ yx_data <-
     "p_immigrant"
   )]
 
+# Stokes' dataframe.
+
 yx_data <- yx_data %>% 
   mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
 
+# Here is where I create my binary variable that supports voting for the
+# incumbent or not.
+
 yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
   mutate(vote = incumb_vote)
+
+# Here I isolate the incumbent vote variable so I can use it later. If I don't
+# isolate, it will be transformed in Stokes' fixed effects function.
 
 yx_diffed <-
   demeaner(
@@ -726,7 +758,11 @@ yx_diffed <-
     group = divisions$master_id
   )
 
+# Fixed effect function.
+
 new <- cbind(yx_diffed, yx_incumb)
+
+# Here I combine the isolated column to the new data frame.
 
 rep_11 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
@@ -753,11 +789,19 @@ yx_data <-
     "p_immigrant"
   )]
 
+# Stokes' dataframe.
+
 yx_data <- yx_data %>% 
   mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
 
+# Here is where I create my binary variable that supports voting for the
+# incumbent or not.
+
 yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
   mutate(vote = incumb_vote)
+
+# Here I isolate the incumbent vote variable so I can use it later. If I don't
+# isolate, it will be transformed in Stokes' fixed effects function.
 
 yx_diffed <-
   demeaner(
@@ -766,7 +810,11 @@ yx_diffed <-
     group = divisions$master_id
   )
 
+# Fixed effect function.
+
 new <- cbind(yx_diffed, yx_incumb)
+
+# Here I combine the isolated column to the new data frame.
 
 rep_12 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
@@ -784,7 +832,11 @@ rep_12 <-
 
 ```{r making data frames, include = FALSE}
 
+# I set include = FALSE because I don't want this code to appear in my pdf.
+
 library(janitor)
+
+# This library is needed to clean the variable names.
 
 three <- as.data.frame(rep_3) %>% 
   clean_names()
