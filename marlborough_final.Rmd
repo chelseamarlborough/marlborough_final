@@ -619,58 +619,6 @@ rbind(matchobj_tr, matchobj_ct)
 # This includes both comments regarding my extension modifications and Stokes'
 # original code comments.
 
-# Column 1 (All Precincts), Section 1 (Turbine Proposal)
-
-yx_data <- divisions[, c("perc_lib", "prop")]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(divisions$year),
-    group = divisions$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-set.seed(1000)
-
-rep_1 <-stan_glm(vote ~ prop + Y2003 + Y2007, data = yx_diffed, refresh = 0, family = "binomial")
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
-# Column 1 (All Precincts), Section 2 (Turbine Operational)
-
-# Using panel demeaning function
-
-yx_data <- divisions[, c("perc_lib", "op")]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(divisions$year),
-    group = divisions$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_2 <- stan_glm(vote ~ op + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0)
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
 # Column 2 (All Precincts with Controls), Section 1 (Turbine Proposal)
 
 divisions <- droplevels(divisions)
@@ -686,6 +634,12 @@ yx_data <-
     "p_immigrant"
   )]
 
+yx_data <- yx_data %>% 
+  mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
+
+yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
+  mutate(vote = incumb_vote)
+
 yx_diffed <-
   demeaner(
     yx = yx_data,
@@ -695,16 +649,11 @@ yx_diffed <-
 
 # Group needs to be a factor as well.
 
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
+new <- cbind(yx_diffed, yx_incumb)
 
 rep_3 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed, family = "binomial", refresh = 0)
+    data = new, family = "binomial", refresh = 0)
 
 # Here is where I create my model. It is important to specify that family =
 # "binomial" otherwise stan_glm() will assume that you are running a linear
@@ -725,6 +674,12 @@ yx_data <-
     "p_immigrant"
   )]
 
+yx_data <- yx_data %>% 
+  mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
+
+yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
+  mutate(vote = incumb_vote)
+
 yx_diffed <-
   demeaner(
     yx = yx_data,
@@ -734,207 +689,16 @@ yx_diffed <-
 
 # Group needs to be a factor as well.
 
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
+new <- cbind(yx_diffed, yx_incumb)
 
 rep_4 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed, family = "binomial", refresh = 0)
+    data = new, family = "binomial", refresh = 0)
 
 # Here is where I create my model. It is important to specify that family =
 # "binomial" otherwise stan_glm() will assume that you are running a linear
 # regression, which would be no different than Stokes' models.
 
-# Column 3 (Rural Precincts), Section 1 (Turbine Proposal)
-
-div_rural <-
-  droplevels(div_rural) 
-
-# Note: you need to have created the rural subset in Data Construction section
-# above.
-
-yx_data <- div_rural[, c("perc_lib", "prop")]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(div_rural$year),
-    group = div_rural$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_5 <- stan_glm(vote ~ prop + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0)
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
-# Column 3 (Rural Precincts), Section 2 (Turbine Operational)
-
-div_rural <- droplevels(div_rural)
-
-yx_data <- div_rural[, c("perc_lib", "op")]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(div_rural$year),
-    group = div_rural$master_id
-  ) 
-
-# Change dataset.
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_6 <-
-  stan_glm(vote ~ op + Y2003 + Y2007, data = yx_diffed, family = "binomial", refresh = 0) 
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
-# Change treatment variable
-
-# Column 4 (Rural Precincts with Controls), Section 1 (Turbine Proposal)
-
-div_rural <- droplevels(div_rural)
-
-yx_data <-
-  div_rural[, c(
-    "perc_lib",
-    "prop",
-    "p_uni_degree",
-    "log_pop_denc",
-    "unemploy_rate",
-    "log_median_inc",
-    "p_immigrant"
-  )]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(div_rural$year),
-    group = div_rural$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_7 <-
-  stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed, family = "binomial", refresh = 0)
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
-# Column 4 (Rural Precincts with Controls), Section 2 (Turbine Operational)
-
-div_rural <- droplevels(div_rural)
-
-yx_data <-
-  div_rural[, c(
-    "perc_lib",
-    "op",
-    "p_uni_degree",
-    "log_pop_denc",
-    "unemploy_rate",
-    "log_median_inc",
-    "p_immigrant"
-  )]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(div_rural$year),
-    group = div_rural$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_8 <-
-  stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed, family = "binomial", refresh = 0)
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
-# Column 5 (Balanced Precincts), Section 1 (Turbine Proposal)
-
-yx_data <- divisions[, c("perc_lib", "prop")]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(divisions$year),
-    group = divisions$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_9 <- stan_glm(vote ~ prop + Y2003 + Y2007,
-     data = yx_diffed, family = "binomial", refresh = 0,
-     weights = divisions$weights_p) 
-
-# Add in weights.
-
-# Here is where I create my model. It is important to specify that family =
-# "binomial" otherwise stan_glm() will assume that you are running a linear
-# regression, which would be no different than Stokes' models.
-
-# Column 5 (Balanced Precincts), Section 2 (Turbine Operational)
-
-yx_data <- divisions[, c("perc_lib", "op")]
-
-yx_diffed <-
-  demeaner(
-    yx = yx_data,
-    T = as.factor(divisions$year),
-    group = divisions$master_id
-  )
-
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
-
-rep_10 <-
-  stan_glm(vote ~ op + Y2003 + Y2007,
-     data = yx_diffed, refresh = 0, family = "binomial",
-     weights = divisions$weights_o) 
-# add in weights
 
 # Column 6 (Balanced Precincts), Section 1 (Turbine Proposal)
 
@@ -949,6 +713,12 @@ yx_data <-
     "p_immigrant"
   )]
 
+yx_data <- yx_data %>% 
+  mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
+
+yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
+  mutate(vote = incumb_vote)
+
 yx_diffed <-
   demeaner(
     yx = yx_data,
@@ -956,16 +726,11 @@ yx_diffed <-
     group = divisions$master_id
   )
 
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
+new <- cbind(yx_diffed, yx_incumb)
 
 rep_11 <-
   stan_glm(vote ~ prop + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed, family = "binomial", refresh = 0, 
+    data = new, family = "binomial", refresh = 0, 
     weights = divisions$weights_p
   ) 
 
@@ -988,6 +753,12 @@ yx_data <-
     "p_immigrant"
   )]
 
+yx_data <- yx_data %>% 
+  mutate(incumb_vote = ifelse(perc_lib >= 0.5, 1, 0))
+
+yx_incumb <- yx_data[, c("incumb_vote"), drop=FALSE] %>% 
+  mutate(vote = incumb_vote)
+
 yx_diffed <-
   demeaner(
     yx = yx_data,
@@ -995,16 +766,11 @@ yx_diffed <-
     group = divisions$master_id
   )
 
-yx_diffed <- yx_diffed %>% 
-  mutate(vote = ifelse(perc_lib >= 0, "1", "0")) %>% 
-  mutate(vote = as.numeric(vote))
-
-# Here is where I create the new binary variable to test the effect of voting
-# for the incumbent or not.
+new <- cbind(yx_diffed, yx_incumb)
 
 rep_12 <-
   stan_glm(vote ~ op + Y2003 + Y2007 + p_uni_degree + log_pop_denc + unemploy_rate + log_median_inc + p_immigrant,
-    data = yx_diffed, family = "binomial", refresh = 0,
+    data = new, family = "binomial", refresh = 0,
     weights = divisions$weights_o
   ) 
 
@@ -1020,22 +786,10 @@ rep_12 <-
 
 library(janitor)
 
-one <- as.data.frame(rep_1) %>% 
-  clean_names()
-
-two <- as.data.frame(rep_2) %>% 
-  clean_names()
-
 three <- as.data.frame(rep_3) %>% 
   clean_names()
 
 four <- as.data.frame(rep_4) %>% 
-  clean_names()
-
-nine <- as.data.frame(rep_9) %>% 
-  clean_names()
-
-ten <- as.data.frame(rep_10) %>% 
   clean_names()
 
 eleven <- as.data.frame(rep_11) %>% 
@@ -1069,7 +823,7 @@ ggplot(three, aes(intercept)) +
        subtitle = "All Precincts - Turbine Proposal",
        x = "Coefficient",
        y = "Count",
-       caption = "The average treatment effect on voting for the incumbent is 0.0408. \n This indicates that voters are more likely to support the incumbent.") +
+       caption = "The average treatment effect on voting for the incumbent is -1.792. \n This indicates that voters are less likely to support the incumbent.") +
   theme(plot.title = element_text(size = 11, hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
@@ -1080,7 +834,7 @@ ggplot(four, aes(intercept)) +
        subtitle = "All Precincts - Turbine Operational",
        x = "Coefficient",
        y = "Count",
-       caption = "The average treatment effect on voting for the incumbent is 0.0410. \n This indicates that voters are more likely to support the incumbent.") +
+       caption = "The average treatment effect on voting for the incumbent is -1.792. \n This indicates that voters are less likely to support the incumbent.") +
   theme(plot.title = element_text(size = 11, hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
@@ -1091,7 +845,7 @@ ggplot(eleven, aes(intercept)) +
        subtitle = "Balanced Precincts - Turbine Proposal",
        x = "Coefficient",
        y = "Count",
-       caption = "The average treatment effect on voting for the incumbent is 0.1543. \n This indicates that voters are more likely to support the incumbent.") +
+       caption = "The average treatment effect on voting for the incumbent is -2.784. \n This indicates that voters are less likely to support the incumbent.") +
   theme(plot.title = element_text(size = 10, hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
@@ -1102,7 +856,7 @@ ggplot(twelve, aes(intercept)) +
        subtitle = "Balanced Precincts - Turbine Operational",
        x = "Coefficient",
        y = "Count",
-       caption = "The average treatment effect on voting for the incumbent is 0.1815. \n This indicates that voters are more likely to support the incumbent.") +
+       caption = "The average treatment effect on voting for the incumbent is -2.269. \n This indicates that voters are less likely to support the incumbent.") +
   theme(plot.title = element_text(size = 10, hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
