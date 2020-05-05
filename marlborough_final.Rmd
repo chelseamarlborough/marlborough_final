@@ -876,7 +876,7 @@ ggplot(three, aes(intercept)) +
        x = "Coefficient",
        y = "Count",
        caption = "The average treatment effect on voting for the incumbent is -1.792. \n This indicates that voters are less likely to support the incumbent.") +
-  theme(plot.title = element_text(size = 11, hjust = 0.5),
+  theme(plot.title = element_text(size = 10, hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
 ggplot(four, aes(intercept)) +
@@ -887,7 +887,7 @@ ggplot(four, aes(intercept)) +
        x = "Coefficient",
        y = "Count",
        caption = "The average treatment effect on voting for the incumbent is -1.792. \n This indicates that voters are less likely to support the incumbent.") +
-  theme(plot.title = element_text(size = 11, hjust = 0.5),
+  theme(plot.title = element_text(size = 10, hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
 ggplot(eleven, aes(intercept)) +
